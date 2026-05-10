@@ -1,5 +1,2 @@
-[build]
-nixpacks = "python-3.13"
-
 [build.apt]
 packages = ["libxcb1", "libxrender1", "libxext6"]
