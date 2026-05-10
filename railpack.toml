@@ -1,2 +1,0 @@
-[build.apt]
-packages = ["libxcb1", "libxrender1", "libxext6"]
