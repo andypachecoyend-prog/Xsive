@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XSIVE — Spectral Curation Engine</title>
+  <meta name="description" content="Motor de curaduría espectral de audio. Clasificador binario CNN para la ecología de sonido Xsive." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ──────────────────────────────── PARTICLES ──────────────────────────────── -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- ──────────────────────────────── APP ROOT ──────────────────────────────── -->
+<div id="app">
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header id="site-header">
+    <div class="header-inner">
+      <div class="logo-group">
+        <div class="logo-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="18" cy="18" r="17" stroke="url(#lg1)" stroke-width="2"/>
+            <path d="M8 18 Q11 10 14 18 Q17 26 20 18 Q23 10 28 18" stroke="url(#lg2)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <defs>
+              <linearGradient id="lg1" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#8B5CF6"/><stop offset="1" stop-color="#06B6D4"/>
+              </linearGradient>
+              <linearGradient id="lg2" x1="8" y1="18" x2="28" y2="18" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#A78BFA"/><stop offset="1" stop-color="#22D3EE"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <span class="logo-text">XSIVE</span>
+          <span class="logo-sub">Spectral Curation Engine</span>
+        </div>
+      </div>
+
+      <nav class="header-nav">
+        <button class="nav-tab active" data-tab="analyze" id="tab-analyze">Analizar</button>
+        <button class="nav-tab" data-tab="metrics" id="tab-metrics">Métricas</button>
+        <button class="nav-tab" data-tab="train" id="tab-train">Entrenamiento</button>
+        <button class="nav-tab" data-tab="docs" id="tab-docs">Guía</button>
+      </nav>
+
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Conectando...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+  <main id="main-content">
+
+    <!-- ─────────────── TAB: ANALYZE ─────────────── -->
+    <section class="tab-panel active" id="panel-analyze">
+
+      <!-- Hero Title -->
+      <div class="section-hero">
+        <h1 class="hero-title">
+          ¿Es este track<br/>
+          <span class="gradient-text">Vanguardista</span>?
+        </h1>
+        <p class="hero-subtitle">
+          Arrastra un archivo de audio. La CNN analizará su espectrograma de Mel,
+          MFCCs y energía RMS para emitir un veredicto de curaduría.
+        </p>
+      </div>
+
+      <!-- Upload Zone -->
+      <div class="upload-zone" id="upload-zone">
+        <div class="upload-inner">
+          <div class="upload-icon-ring">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="31" stroke="url(#ug1)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <path d="M32 44V28M25 35l7-8 7 8" stroke="url(#ug2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M22 46h20" stroke="url(#ug2)" stroke-width="2" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="ug1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#7C3AED"/><stop offset="1" stop-color="#0891B2"/>
+                </linearGradient>
+                <linearGradient id="ug2" x1="25" y1="28" x2="39" y2="46" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#A78BFA"/><stop offset="1" stop-color="#22D3EE"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <p class="upload-title">Arrastra tu track aquí</p>
+          <p class="upload-hint">WAV · MP3 · FLAC · AIF · OGG</p>
+          <label class="btn-primary" id="upload-btn-label" for="audio-file-input">
+            Seleccionar archivo
+          </label>
+          <input type="file" id="audio-file-input" accept=".wav,.mp3,.flac,.aif,.aiff,.ogg,.m4a" hidden />
+        </div>
+      </div>
+
+      <!-- Processing State -->
+      <div class="processing-state hidden" id="processing-state">
+        <div class="processing-visual">
+          <div class="eq-bars">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <p class="processing-label" id="processing-label">Generando espectrograma de Mel...</p>
+        <div class="processing-steps">
+          <div class="step" id="step-load">
+            <div class="step-dot"></div><span>Cargar audio · 22050 Hz</span>
+          </div>
+          <div class="step" id="step-mel">
+            <div class="step-dot"></div><span>Mel Spectrogram (128 bins)</span>
+          </div>
+          <div class="step" id="step-mfcc">
+            <div class="step-dot"></div><span>MFCCs + Δ + Δ² (60 coef.)</span>
+          </div>
+          <div class="step" id="step-rms">
+            <div class="step-dot"></div><span>Energía RMS (dinámica)</span>
+          </div>
+          <div class="step" id="step-cnn">
+            <div class="step-dot"></div><span>Inferencia CNN</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Panel -->
+      <div class="result-panel hidden" id="result-panel">
+
+        <!-- Verdict Card -->
+        <div class="verdict-card" id="verdict-card">
+          <div class="verdict-badge" id="verdict-badge">
+            <div class="badge-icon" id="badge-icon">
+              <!-- SVG se inyecta via JS -->
+            </div>
+            <div class="badge-text">
+              <span class="verdict-label" id="verdict-label">APROBADO</span>
+              <span class="verdict-class" id="verdict-class">Clase 1 — Vanguardista</span>
+            </div>
+          </div>
+
+          <div class="probability-section">
+            <div class="prob-header">
+              <span class="prob-label">P(Vanguardista)</span>
+              <span class="prob-value" id="prob-value">0.00%</span>
+            </div>
+            <div class="prob-bar-track">
+              <div class="prob-bar-fill" id="prob-bar-fill"></div>
+              <div class="prob-threshold-marker" id="threshold-marker"></div>
+            </div>
+            <div class="prob-scale">
+              <span>0%</span>
+              <span class="threshold-label">Umbral: 85%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <div class="result-meta">
+            <div class="meta-chip" id="chip-confidence">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <span id="confidence-text">ALTA</span>
+            </div>
+            <div class="meta-chip" id="chip-time">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <span id="time-text">0 ms</span>
+            </div>
+            <div class="meta-chip" id="chip-model">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <span id="model-text">Demo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spectrogram -->
+        <div class="spectrogram-card">
+          <div class="card-header">
+            <span class="card-title">Análisis Espectral</span>
+            <span class="card-sub" id="spec-filename"></span>
+          </div>
+          <div class="spectrogram-container">
+            <img id="spectrogram-img" src="" alt="Espectrograma" />
+          </div>
+        </div>
+
+        <!-- Try Again -->
+        <button class="btn-ghost" id="btn-reset">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M3 10a7 7 0 1 0 1.5-4.33" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 5v5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Analizar otro track
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- ─────────────── TAB: METRICS ─────────────── -->
+    <section class="tab-panel" id="panel-metrics">
+      <div class="section-hero">
+        <h1 class="hero-title" style="font-size:2rem">Métricas del <span class="gradient-text">Modelo</span></h1>
+        <p class="hero-subtitle">Resultados de evaluación sobre el test set de 2000 tracks.</p>
+      </div>
+
+      <div class="metrics-grid" id="metrics-grid">
+        <div class="metric-card" id="metric-accuracy">
+          <span class="metric-icon">🎯</span>
+          <span class="metric-value" data-key="accuracy">—</span>
+          <span class="metric-label">Accuracy</span>
+        </div>
+        <div class="metric-card" id="metric-auc">
+          <span class="metric-icon">📈</span>
+          <span class="metric-value" data-key="auc">—</span>
+          <span class="metric-label">AUC-ROC</span>
+        </div>
+        <div class="metric-card" id="metric-precision">
+          <span class="metric-icon">🔬</span>
+          <span class="metric-value" data-key="precision">—</span>
+          <span class="metric-label">Precision</span>
+        </div>
+        <div class="metric-card" id="metric-recall">
+          <span class="metric-icon">🔁</span>
+          <span class="metric-value" data-key="recall">—</span>
+          <span class="metric-label">Recall</span>
+        </div>
+      </div>
+
+      <div class="charts-grid" id="metrics-charts">
+        <div class="chart-card" id="chart-cm">
+          <div class="chart-header">Matriz de Confusión</div>
+          <div class="chart-body chart-placeholder" id="cm-placeholder">
+            <span>Sin datos — Entrena el modelo primero</span>
+          </div>
+        </div>
+        <div class="chart-card" id="chart-roc">
+          <div class="chart-header">Curvas ROC &amp; Precision-Recall</div>
+          <div class="chart-body chart-placeholder" id="roc-placeholder">
+            <span>Sin datos — Entrena el modelo primero</span>
+          </div>
+        </div>
+        <div class="chart-card chart-full" id="chart-curves">
+          <div class="chart-header">Curvas de Aprendizaje</div>
+          <div class="chart-body chart-placeholder" id="curves-placeholder">
+            <span>Sin datos — Entrena el modelo primero</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-refresh-metrics" style="margin: 2rem auto; display:flex; width:fit-content">
+        <svg viewBox="0 0 20 20" fill="none" style="width:18px;height:18px;margin-right:8px"><path d="M3 10a7 7 0 1 0 1.5-4.33" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 5v5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Actualizar Métricas
+      </button>
+    </section>
+
+    <!-- ─────────────── TAB: TRAIN ─────────────── -->
+    <section class="tab-panel" id="panel-train">
+      <div class="section-hero">
+        <h1 class="hero-title" style="font-size:2rem">Entrenar el <span class="gradient-text">Clasificador</span></h1>
+        <p class="hero-subtitle">Ejecuta el pipeline completo de entrenamiento desde el servidor.</p>
+      </div>
+
+      <!-- Dataset Config -->
+      <div class="train-config-card">
+        <h2 class="config-title">Configuración del Dataset</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label class="config-label">Clase 1 — Vanguardista</label>
+            <div class="config-path">
+              <svg viewBox="0 0 20 20" fill="none"><path d="M3 7h14M3 10h14M3 13h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <code>data/vanguardista/</code>
+            </div>
+          </div>
+          <div class="config-item">
+            <label class="config-label">Clase 0 — Antiguo</label>
+            <div class="config-path">
+              <svg viewBox="0 0 20 20" fill="none"><path d="M3 7h14M3 10h14M3 13h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <code>data/antiguo/</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipeline-phases">
+          <div class="phase-badge">F1 Extracción</div>
+          <div class="phase-arrow">→</div>
+          <div class="phase-badge">F2 Tensores</div>
+          <div class="phase-arrow">→</div>
+          <div class="phase-badge">F3 CNN Build</div>
+          <div class="phase-arrow">→</div>
+          <div class="phase-badge">F4 Training</div>
+          <div class="phase-arrow">→</div>
+          <div class="phase-badge">F5 Reporte</div>
+        </div>
+
+        <div class="train-options">
+          <label class="toggle-option">
+            <input type="checkbox" id="from-processed-toggle" />
+            <span class="toggle-track"></span>
+            <span>Saltar extracción (usar tensores en disco)</span>
+          </label>
+        </div>
+
+        <button class="btn-primary btn-large" id="btn-start-train">
+          <svg viewBox="0 0 20 20" fill="none" style="width:20px;height:20px;margin-right:10px"><polygon points="5,3 17,10 5,17" fill="currentColor"/></svg>
+          Iniciar Entrenamiento
+        </button>
+      </div>
+
+      <!-- Training Log -->
+      <div class="train-log-card" id="train-log-section">
+        <div class="log-header">
+          <span class="log-title">
+            <span class="log-dot" id="log-dot"></span>
+            Log de Entrenamiento
+          </span>
+          <button class="btn-icon" id="btn-clear-log">Limpiar</button>
+        </div>
+        <div class="log-body" id="train-log-body">
+          <span class="log-placeholder">El log aparecerá aquí cuando inicies el entrenamiento...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────── TAB: DOCS ─────────────── -->
+    <section class="tab-panel" id="panel-docs">
+      <div class="section-hero">
+        <h1 class="hero-title" style="font-size:2rem">Guía de <span class="gradient-text">Uso</span></h1>
+        <p class="hero-subtitle">Cómo funciona el motor de curaduría espectral de Xsive.</p>
+      </div>
+
+      <div class="docs-grid">
+        <div class="doc-card">
+          <div class="doc-num">01</div>
+          <h3 class="doc-title">Instalar dependencias</h3>
+          <pre class="code-block">pip install flask flask-cors librosa
+pip install tensorflow scikit-learn
+pip install numpy opencv-python
+pip install matplotlib seaborn</pre>
+          <p class="doc-note">Requiere Python 3.9+ y opcionalmente FFmpeg para MP3.</p>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-num">02</div>
+          <h3 class="doc-title">Preparar el dataset</h3>
+          <pre class="code-block">SIVE/
+├── data/
+│   ├── vanguardista/  ← 1000 tracks (Clase 1)
+│   └── antiguo/       ← 1000 tracks (Clase 0)
+└── xsive_classifier/  ← Código ML</pre>
+          <p class="doc-note">Formatos: WAV, MP3, FLAC, AIF, OGG, M4A.</p>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-num">03</div>
+          <h3 class="doc-title">Iniciar el servidor</h3>
+          <pre class="code-block">cd SIVE
+python server.py
+
+# Interfaz web:
+# http://localhost:5000</pre>
+          <p class="doc-note">El modelo se carga automáticamente si ya existe.</p>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-num">04</div>
+          <h3 class="doc-title">Entrenar desde CLI</h3>
+          <pre class="code-block"># Pipeline completo
+python xsive_classifier/main.py
+
+# Solo inferencia
+python xsive_classifier/main.py \
+  --predict track.wav
+
+# Reentrenar (sin reextracción)
+python xsive_classifier/main.py \
+  --from-processed</pre>
+        </div>
+
+        <div class="doc-card doc-card-wide">
+          <div class="doc-num">05</div>
+          <h3 class="doc-title">Arquitectura del pipeline</h3>
+          <div class="pipeline-diagram">
+            <div class="pd-step">
+              <div class="pd-icon">🎵</div>
+              <div class="pd-label">Audio crudo</div>
+              <div class="pd-sub">MP3/WAV/FLAC</div>
+            </div>
+            <div class="pd-arrow">→</div>
+            <div class="pd-step">
+              <div class="pd-icon">🌊</div>
+              <div class="pd-label">Mel Spectrogram</div>
+              <div class="pd-sub">128 bins, fmax=11kHz</div>
+            </div>
+            <div class="pd-arrow">→</div>
+            <div class="pd-step">
+              <div class="pd-icon">🧮</div>
+              <div class="pd-label">Tensor (128×128×1)</div>
+              <div class="pd-sub">StandardScaler</div>
+            </div>
+            <div class="pd-arrow">→</div>
+            <div class="pd-step">
+              <div class="pd-icon">🧠</div>
+              <div class="pd-label">CNN · 4 Bloques</div>
+              <div class="pd-sub">Conv2D + GlobalAvgPool</div>
+            </div>
+            <div class="pd-arrow">→</div>
+            <div class="pd-step">
+              <div class="pd-icon">⚖️</div>
+              <div class="pd-label">Sigmoid ≥ 0.85</div>
+              <div class="pd-sub">Umbral de aprobación</div>
+            </div>
+            <div class="pd-arrow">→</div>
+            <div class="pd-step approved">
+              <div class="pd-icon">✅</div>
+              <div class="pd-label">APROBADO</div>
+              <div class="pd-sub">Vanguardista</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══════ TOAST ══════ -->
+  <div id="toast" class="toast hidden">
+    <span id="toast-icon"></span>
+    <span id="toast-msg"></span>
+  </div>
+
+</div><!-- /#app -->
+
+<script src="app.js"></script>
+</body>
+</html>

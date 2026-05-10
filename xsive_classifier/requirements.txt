@@ -1,0 +1,30 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║    XSIVE CNN Audio Classifier — Python Dependencies             ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+# ── Core ML & Deep Learning ──────────────────────────────────────────
+tensorflow>=2.13.0              # CNN framework (Keras incluido)
+keras>=2.13.0                   # API de alto nivel (bundled con TF)
+
+# ── Audio Processing & DSP ───────────────────────────────────────────
+librosa>=0.10.1                 # Feature extraction espectral
+soundfile>=0.12.1               # Backend I/O de audio (WAV/FLAC/OGG)
+audioread>=3.0.0                # Backend para MP3 / AAC / M4A
+
+# ── Numerical Computing ───────────────────────────────────────────────
+numpy>=1.24.0                   # Arrays y álgebra lineal
+scipy>=1.11.0                   # Operaciones DSP adicionales
+
+# ── Computer Vision (resize de espectrogramas) ───────────────────────
+opencv-python>=4.8.0            # Resize bilineal de espectrogramas
+
+# ── Machine Learning & Métricas ──────────────────────────────────────
+scikit-learn>=1.3.0             # StandardScaler, confusion_matrix, classification_report, roc_auc
+
+# ── Visualization ────────────────────────────────────────────────────
+matplotlib>=3.7.0               # Curvas de aprendizaje, distribuciones
+seaborn>=0.12.0                 # Heatmap de confusion matrix
+
+# ── Utilities ─────────────────────────────────────────────────────────
+tqdm>=4.65.0                    # Barras de progreso
+joblib>=1.3.0                   # Paralelización y serialización
